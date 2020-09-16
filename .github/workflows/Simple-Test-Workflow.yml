@@ -33,7 +33,11 @@ jobs:
     - name: Build with Maven
       run: mvn -B package --file pom.xml
 
-  #  - name: Publish to GitHub Packages Apache Maven
-  #    run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
-   #   env:
-   #     GITHUB_TOKEN: ${{ github.token }}
+    - uses: alialaa/issue-action@v1.0.0
+      if: failure()
+      with:
+        token: ${{github.token}}
+        title: found issue with test ${{github.workflow}}!
+        body: Workflow ${{github.run_number }} Failed!. Repo is ${{github.repository}}
+        
+       
