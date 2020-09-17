@@ -35,9 +35,9 @@ jobs:
       run: mvn -B package --file pom.xml 
     - uses: azure/docker-login@v1
       with:
-         login-server: ${{secrets.ACR_USERNAME }} # default: index.docker.io
-         username: ${{ secrets.ACR_PASSWORD }}
-         password: ${{ secrets.ACR_LOGINSERVER }}
+         login-server: ${{secrets.ACR_LOGINSERVER  }} # default: index.docker.io
+         username: ${{ secrets.ACR_USERNAME }}
+         password: ${{ secrets.ACR_PASSWORD }}
       
     - name: build docker image
       run: |
