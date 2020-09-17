@@ -1,0 +1,45 @@
+name: Testworkflow
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults: 
+         run: 
+          shell: bash
+          working-directory: apis/trips
+
+    steps:
+
+    - name: Azure Login
+      uses: Azure/login@v1
+      with:
+        creds: ${{secrets.AZURE_CREDENTIALS  }}
+
+    - name: Run a test in staging
+      uses: wei/curl@master
+      with: 
+         args: http://openhacka8d3h114trips-staging.azurewebsites.net/api/healthcheck/trips
+
+    - name: Swap Stage to PROD
+      uses: Azure/cli@v1.0.0
+      if: success()
+      with:
+       inlineScript: az webapp deployment slot swap -g openhacka8d3h114rg -n openhacka8d3h114trips --slot staging --target-slot production
+
+    - name: Run a test in PROD
+      uses: wei/curl@master
+      with: 
+         args: https://openhacka8d3h114trips.azurewebsites.net/api/healthcheck/tripsABCDEF
+           
+    - name: Revert Swap PROD & stage
+      uses: Azure/cli@v1.0.0
+      if: failure()
+      with:
+       inlineScript: az webapp deployment slot swap -g openhacka8d3h114rg -n openhacka8d3h114trips --slot staging --target-slot production
+         

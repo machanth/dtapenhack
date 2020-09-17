@@ -1,0 +1,52 @@
+name: Go
+
+on:
+  push:
+    branches: [ master ]
+#    paths: "apis/trips/**"
+  pull_request:
+    branches: [ master ]
+ #   paths: "apis/trips/**"
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    defaults:
+      run: 
+       shell: bash
+       working-directory: apis/trips
+    steps:
+     - uses: actions/setup-go@v2.0.3
+       with:
+        go-version: 1.12
+     - uses: actions/checkout@v2
+     - run: go get
+     - run: go test ./tests
+       
+     - name: Open Github Issue
+       uses: alialaa/issue-action@v1.0.0
+       if: failure()
+       with:
+          token: ${{github.token}}
+          title: found issue with test ${{github.workflow}}!
+          body: Workflow ${{ github.run_number }} Failed!. Repo is ${{github.repository}} 
+
+     - uses: Azure/docker-login@v1
+       with: 
+          username: ${{secrets.ACR_USERNAME }}
+          password: ${{secrets.ACR_PASSWORD }} 
+          login-server: ${{secrets.ACR_LOGINSERVER }}
+     
+     - run: |
+         docker build . -t openhacka8d3h114acr.azurecr.io/dtadevops-apis:${{ github.run_number }}
+         docker push openhacka8d3h114acr.azurecr.io/dtadevops-apis:${{ github.run_number }}
+         
+     - uses: Azure/webapps-deploy@v2
+       with:
+         app-name: openhacka8d3h114trips
+         publish-profile: ${{ secrets.azureWebAppPublishProfile }}
+         slot-name: staging
+         images: openhacka8d3h114acr.azurecr.io/dtadevops-apis:${{ github.run_number }}
+       
