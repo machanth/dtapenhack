@@ -27,7 +27,6 @@ jobs:
       
     steps:
     - uses: Azure/login@v1
-      name: Azure login
       with:
        creds: ${{ secrets.AZURE_CREDENTIALS }} 
          
