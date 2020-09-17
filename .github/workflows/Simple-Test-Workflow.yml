@@ -27,8 +27,6 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
-        #server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
-        #settings-path: ${{ github.workspace }} # location for the settings.xml file
 
     - name: Build with Maven
       run: mvn -B package --file pom.xml
@@ -39,5 +37,27 @@ jobs:
         token: ${{github.token}}
         title: found issue with test ${{github.workflow}}!
         body: Workflow ${{github.run_number }} Failed!. Repo is ${{github.repository}}
-        
+    - uses: alialaa/issue-action@v1.0.0   
+      if: success()
+      run:
+        curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{ \ 
+       "createdAt":"2018-08-07", \ 
+       "deleted": false, \ 
+       "firstName": "Hacker", \ 
+       "fuelConsumption": 0, \ 
+       "hardAccelerations": 0, \ 
+       "hardStops": 0, \ 
+       "id": "1234", \ 
+       "lastName": "Test", \ 
+       "maxSpeed": 0, \ 
+       "profilePictureUri": "https://pbs.twimg.com/profile_images/1003946090146693122/IdMjh-FQ_bigger.jpg", \ 
+       "ranking": 0, \ 
+       "rating": 0, \ 
+       "totalDistance": 0, \ 
+       "totalTime": 0, \ 
+       "totalTrips": 0, \ 
+       "updatedAt": "2018-08-07", \ 
+       "userId": "Hacker3" \ 
+     }' 'http://localhost:8080/api/user/1234'
+              
        
