@@ -7,17 +7,12 @@ name: CI
 env:
   webapp_name: openhacka8d3h114userjava
   resource_group: openhacka8d3h114rg
-  
-
-
-
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
     paths: /apis/user-java/
-
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -32,7 +27,7 @@ jobs:
       
     steps:
     - name: Azure login
-      uses: Azure/login@v1
+    - uses: Azure/login@v1
       with:
        creds: ${{ secrets.AZURE_CREDENTIALS }} 
          
