@@ -21,23 +21,41 @@ jobs:
       run:
         shell: bash
         working-directory: apis/user-java
+      
     steps:
+   
+         
     - uses: actions/checkout@v2
     - name: Set up JDK 11 for Shared Runner
       uses: actions/setup-java@v1
       with:
         java-version: 11
-        #server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
-        #settings-path: ${{ github.workspace }} # location for the settings.xml file
 
     - name: Build with Maven
-      run: mvn -B package --file pom.xml
-
+      run: mvn -B package --file pom.xml 
+    - uses: azure/docker-login@v1
+      with:
+         login-server: ${{secrets.ACR_USERNAME }} # default: index.docker.io
+         username: ${{ secrets.ACR_PASSWORD }}
+         password: ${{ secrets.ACR_LOGINSERVER }}
+      
+    - name: build docker image
+      run: |
+         docker build . -t openhacka8d3h114acr.azurecr.io/dtadevops-apis:${{github.run_number }}
+         docker push openhacka8d3h114acr.azurecr.io/dtadevops-apis:${{github.run_number }}
+    - uses: Azure/webapps-deploy@v2
+      with:
+       app-name: openhacka8d3h114userjava
+       publish-profile:  ${{ secrets.azureWebAppPublishProfile }}
+       slot-name: staging
+       images: openhacka8d3h114acr.azurecr.io/dtadevops-apis:${{ github.run_number }}
     - uses: alialaa/issue-action@v1.0.0
       if: failure()
       with:
         token: ${{github.token}}
         title: found issue with test ${{github.workflow}}!
         body: Workflow ${{github.run_number }} Failed!. Repo is ${{github.repository}}
-        
+    
+
+              
        
