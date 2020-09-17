@@ -1,0 +1,120 @@
+name: (.NET Core) POI CI
+
+env:
+  poi_path: apis/poi/**
+  repository: rcorbin24/RCDTAOpenHack
+  docker_path: apis/poi/web
+  staging_url: https://openhacka8d3h114poi-staging.azurewebsites.net
+  prod_url: https://openhacka8d3h114poi.azurewebsites.net
+  resource_group: openhacka8d3h114rg
+  webapp_name: openhacka8d3h114poi
+  build_name: POI
+  docker_image_name: devopsoh/api-poi
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - apis/poi/**
+      - .github/workflows/dotnet-core.yml
+  pull_request:
+    branches: [ master ]
+    paths: 
+      - apis/poi/**
+      - .github/workflows/dotnet-core.yml
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 2.1.403
+    - name: Add Code Coverage Tools
+      working-directory: apis/poi/tests/UnitTests
+      run: dotnet add package coverlet.msbuild
+      
+    - name: Install dependencies
+      run: dotnet restore apis/poi/web/*.csproj
+      
+    - name: Build
+      run: dotnet build --configuration Release --no-restore apis/poi/web/*.csproj
+      
+    - name: Test (Unit Test)
+      run: dotnet build --configuration Release apis/poi/tests/UnitTests/UnitTests.csproj
+    
+    - name: .NET Test
+      run: dotnet test --no-restore --verbosity normal apis/poi/tests/UnitTests  /p:CollectCoverage=true /p:CoverletOutput=lcov/ /p:CoverletOutputFormat=lcov
+    
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-lcov: apis/poi/tests/UnitTests/lcov/coverage.info
+        base-path: apis/poi
+        flag-name: Unit
+        
+    - name: Open Github Issue
+      # You may pin to the exact commit or the version.
+      # uses: alialaa/issue-action@16298c378572dac709364a3b2de16acb02efdc10
+      uses: alialaa/issue-action@v1.0.0
+      with:
+        # Github Token
+        token: 7d792377a9d67a80109fb7d1af717d1b68d6b10d
+          # Issue Title
+        title: Error Build
+          # Issue Body
+        body: Body - Error Build
+    # Issue Assignees
+        assignees: rcorbin24
+
+    - uses: Azure/docker-login@v1
+      with:
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+        login-server: ${{ secrets.ACR_LOGINSERVER }}
+
+    - run: |
+          docker build -t openhacka8d3h114acr.azurecr.io/devopsoh/api-poi:${{ github.run_number }} --build-arg build_version=${{github.run_number}} $docker_path
+          docker push openhacka8d3h114acr.azurecr.io/devopsoh/api-poi:${{ github.run_number }}
+
+    - uses: Azure/webapps-deploy@v2
+      with:
+          app-name: openhacka8d3h114poi
+          publish-profile: ${{ secrets.POI_PUBLISHINGPROFILE }}
+          slot-name: staging
+          images: openhacka8d3h114acr.azurecr.io/devopsoh/api-poi:${{ github.run_number }}
+          
+          
+    - name: Azure Login
+      uses: Azure/login@v1
+      with:
+        # Paste output of `az ad sp create-for-rbac` as value of secret variable: AZURE_CREDENTIALS
+        creds: ${{secrets.AZURE_CREDENTIALS }}
+        # Set this value to true to enable Azure PowerShell Login in addition to Az CLI login
+        enable-AzPSSession: true
+        
+    - name: Run a test in stage
+      uses: wei/curl@master
+      with: 
+        args: https://openhacka8d3h114poi-staging.azurewebsites.net/api/healthcheck/poi
+    
+    - name: Swap Stage to PROD
+      uses: Azure/cli@v1.0.0
+      if: success()
+      with:
+        inlineScript: az webapp deployment slot swap --resource-group openhacka8d3h114rg --name openhacka8d3h114poi --slot staging --target-slot production
+      
+    - name: Run a test in PROD
+      uses: wei/curl@master
+      with:
+        args: https://openhacka8d3h114poi.azurewebsites.net/api/healthcheck/poiABCDEF
+        
+    - name: Revert swap PROD & Stage
+      uses: Azure/cli@v1.0.0
+      if: failure()
+      with:
+        inlineScript: az webapp deployment slot swap --resource-group openhacka8d3h114rg --name openhacka8d3h114poi --slot staging --target-slot production
