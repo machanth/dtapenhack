@@ -21,7 +21,10 @@ jobs:
       run:
         shell: bash
         working-directory: apis/user-java
+      
     steps:
+   
+         
     - uses: actions/checkout@v2
     - name: Set up JDK 11 for Shared Runner
       uses: actions/setup-java@v1
@@ -29,35 +32,30 @@ jobs:
         java-version: 11
 
     - name: Build with Maven
-      run: mvn -B package --file pom.xml
-
+      run: mvn -B package --file pom.xml 
+    - uses: azure/docker-login@v1
+      with:
+         login-server: ${{secrets.ACR_USERNAME }} # default: index.docker.io
+         username: ${{ secrets.ACR_PASSWORD }}
+         password: ${{ secrets.ACR_LOGINSERVER }}
+      
+    - name: build docker image
+      run: |
+         docker build . -t openhacka8d3h114acr.azurecr.io/dtadevops-apis:${{github.run_number }}
+         docker push openhacka8d3h114acr.azurecr.io/dtadevops-apis:${{github.run_number }}
+    - uses: Azure/webapps-deploy@v2
+      with:
+       app-name: openhacka8d3h114userjava
+       publish-profile:  ${{ secrets.azureWebAppPublishProfile }}
+       slot-name: staging
+       images: openhacka8d3h114acr.azurecr.io/dtadevops-apis:${{ github.run_number }}
     - uses: alialaa/issue-action@v1.0.0
       if: failure()
       with:
         token: ${{github.token}}
         title: found issue with test ${{github.workflow}}!
         body: Workflow ${{github.run_number }} Failed!. Repo is ${{github.repository}}
-    - uses: alialaa/issue-action@v1.0.0   
-      if: success()
-      run:
-        curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{ \ 
-       "createdAt":"2018-08-07", \ 
-       "deleted": false, \ 
-       "firstName": "Hacker", \ 
-       "fuelConsumption": 0, \ 
-       "hardAccelerations": 0, \ 
-       "hardStops": 0, \ 
-       "id": "1234", \ 
-       "lastName": "Test", \ 
-       "maxSpeed": 0, \ 
-       "profilePictureUri": "https://pbs.twimg.com/profile_images/1003946090146693122/IdMjh-FQ_bigger.jpg", \ 
-       "ranking": 0, \ 
-       "rating": 0, \ 
-       "totalDistance": 0, \ 
-       "totalTime": 0, \ 
-       "totalTrips": 0, \ 
-       "updatedAt": "2018-08-07", \ 
-       "userId": "Hacker3" \ 
-     }' 'http://localhost:8080/api/user/1234'
+    
+
               
        
