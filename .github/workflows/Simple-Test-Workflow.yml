@@ -82,7 +82,7 @@ jobs:
          "totalTrips": 0, 
          "updatedAt": "2018-08-07", 
          "userId": "Hacker3" 
-       } 'https://openhacka8d3h114userjava-staging.azurewebsites.net/api/user/1234'
+       }' 'https://openhacka8d3h114userjava-staging.azurewebsites.net/api/user/1234'
       
     #  - name: Swap staging to production
     #  run: |
