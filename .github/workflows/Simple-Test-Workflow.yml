@@ -41,8 +41,8 @@ jobs:
       
     - name: build docker image
       run: |
-         docker build . -t openhacka8d3h114acr.azurecr.io/DTAOpenhack:${{github.run_number }}
-         docker push openhacka8d3h114acr.azurecr.io/DTAOpenhack:${{github.run_number }}
+         docker build . -t openhacka8d3h114acr.azurecr.io/dtaopenhack:${{github.run_number }}
+         docker push openhacka8d3h114acr.azurecr.io/dtaopenhack:${{github.run_number }}
     - uses: Azure/webapps-deploy@v2
       with:
        app-name: openhacka8d3h114userjava
