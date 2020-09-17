@@ -26,8 +26,9 @@ jobs:
         working-directory: apis/user-java
       
     steps:
-    - name: Azure login
+  
     - uses: Azure/login@v1
+    - name: Azure login
       with:
        creds: ${{ secrets.AZURE_CREDENTIALS }} 
          
