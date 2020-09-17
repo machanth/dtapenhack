@@ -1,0 +1,77 @@
+name: Node API Docker Image
+
+env:
+  $registry: openhacka8d3h114acr.azurecr.io
+
+
+on:
+  push:
+    branches: 
+      - master
+    paths:
+      - apis/userprofile/**
+  pull_request:
+    branches:
+      - master
+    paths:
+      - apis/userprofile/**
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+    defaults: 
+      run:
+        shell: bash
+        working-directory: apis/userprofile
+
+    steps:
+
+    - uses: Azure/docker-login@v1
+      with:
+         username: ${{secrets.ACR_USERNAME}}
+         password: ${{secrets.ACR_PASSWORD}}
+         login-server: ${{secrets.ACR_LOGINSERVER}}
+  
+        #$docker login $registry -u ${{ secrets.ACR_USER}} -p ${{secrets.ACR_KEY}} 
+
+    - uses: actions/checkout@v2
+      name: Build the Docker image
+     # run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+    - run: | 
+           docker build . --file Dockerfile --tag openhacka8d3h114acr.azurecr.io/nodeapi:${{github.run_number}}
+           docker push openhacka8d3h114acr.azurecr.io/nodeapi:${{github.run_number}}
+           
+           #push $registry/$docker_image_name:${{github.run_number}}
+
+    - uses: Azure/webapps-deploy@v2
+      with: 
+        app-name: openhacka8d3h114userprofile
+        publish-profile: ${{secrets.publish_profile}}
+        slot-name: staging
+        images: openhacka8d3h114acr.azurecr.io/dtadevops-apis:${{github.run_number}}
+        
+        
+
+    - uses: Azure/login@v1
+      with:
+        creds: ${{secrets.AZURE_CREDENTIALS}} 
+    - name: Run a test in staging
+      uses: wei/curl@master
+      with:
+          args: https://openhacka8d3h114userprofile.azurewebsites.net/api/docs/user/
+    - name: Swap Stage to PROD
+      uses: Azure/cli@v1.0.0
+      if: success()
+      with:
+          inlineScript: az webapp deployment slot swap -g openhacka8d3h114rg -n openhacka8d3h114userprofile --slot staging --target-slot production 
+    - name: Run a test in PROD
+      uses: wei/curl@master
+      with:
+          args: https://openhacka8d3h114userprofile.azurewebsites.net/api/docs/user123ABC
+    - name: Revert Swap PROD & stage
+      uses: Azure/cli@v1.0.0
+      if: failure()
+      with:
+        inlineScript: az webapp deployment slot swap -g openhacka8d3h114rg -n openhacka8d3h114userprofile --slot staging --target-slot production
